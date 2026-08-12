@@ -44,6 +44,8 @@ fi
 # --- CREATE RUNTIME & LOG DIRECTORIES ---
 # /run is a tmpfs mount inside memory and must be recreated on boot
 mkdir -p /run/kea /var/run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
+# Fix Kea 2.6 socket permissions requirement
+chmod 750 /run/kea /var/run/kea
 
 # --- START BACKGROUND SERVICES (Matching supervisor behavior) ---
 
