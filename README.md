@@ -17,7 +17,7 @@ mkdir -p /mnt/user/appdata/kea-primary/lib
 mkdir -p /mnt/user/appdata/kea-primary/webmin```
 
 Volume Mount Breakdown
-| Host | Path	| Container Path	| Mode | Description |
+| Host Path	| Container Path | Mode | Description |
 | --- | --- | ---| --- | --- |
 | /mnt/user/appdata/kea-primary	| /etc/kea | rw | Configuration directory (kea-dhcp4.conf, kea-ctrl-agent.conf).|
 | /mnt/user/appdata/kea-primary/logs	| /var/log/kea	| rw | Kea server operational logs.|
