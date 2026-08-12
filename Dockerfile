@@ -17,17 +17,20 @@ FROM debian:trixie-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Default Environment Variables matching your supervisor flags
+# Default Environment Variables
 ENV WEBMIN_REFERERS="*" \
     STORK_AGENT_HOST="192.168.0.239" \
     STORK_AGENT_PORT="8081" \
     STORK_AGENT_SERVER_URL="http://192.168.0.240:8080" \
     PROMETHEUS_EXPORTER_ADDR="0.0.0.0"
 
-# Unraid Docker UI Annotations
+# Unraid GUI Auto-Fill & Metadata Annotations
 LABEL net.unraid.docker.managed="dockerman" \
       net.unraid.docker.webui="https://[IP]:[PORT:10000]" \
-      net.unraid.docker.icon="https://www.isc.org/images/isclogos/kea-logo-cmyk-circle.png"
+      net.unraid.docker.icon="https://www.isc.org/images/isclogos/kea-logo-cmyk-circle.png" \
+      net.unraid.docker.ports="67:67/udp, 68:68/udp, 546:546/udp, 547:547/udp, 8000:8000/tcp, 8081:8081/tcp, 10000:10000/tcp, 12345:12345/tcp, 9547:9547/tcp" \
+      net.unraid.docker.volumes="/etc/kea:/mnt/user/appdata/kea-primary:rw, /var/log/kea:/mnt/user/appdata/kea-primary/logs:rw, /var/lib/kea:/mnt/user/appdata/kea-primary/lib:rw, /etc/alloy:/mnt/user/appdata/kea-primary/alloy:rw, /etc/webmin:/mnt/user/appdata/kea-primary/webmin:rw" \
+      net.unraid.docker.variables="STORK_AGENT_HOST=192.168.0.239, STORK_AGENT_PORT=8081, STORK_AGENT_SERVER_URL=http://192.168.0.240:8080, PROMETHEUS_EXPORTER_ADDR=0.0.0.0, WEBMIN_REFERERS=*"
 
 # Install Kea DHCP & core tooling
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -74,12 +77,6 @@ RUN mkdir -p /run/kea /var/run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Declare volume mount points corresponding to your Unraid Appdata paths:
-# /etc/kea     -> /mnt/user/appdata/kea-primary
-# /var/log/kea -> /mnt/user/appdata/kea-primary/logs
-# /var/lib/kea -> /mnt/user/appdata/kea-primary/lib
-# /etc/alloy   -> /mnt/user/appdata/kea-primary/alloy
-# /etc/webmin  -> /mnt/user/appdata/kea-primary/webmin
 VOLUME ["/etc/kea", "/var/log/kea", "/var/lib/kea", "/etc/alloy", "/etc/webmin"]
 
 EXPOSE 67/udp 68/udp 546/udp 547/udp 8000/tcp 8081/tcp 10000/tcp 12345/tcp 9547/tcp
