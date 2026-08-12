@@ -16,6 +16,8 @@ RUN apt-get update && apt-get download isc-stork-agent
 FROM debian:trixie-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
+# Define default allowed referers for Webmin (* allows all host headers by default)
+ENV WEBMIN_REFERERS="*"
 
 # Install base utilities, ISC Kea DHCP (Natively 2.6+ on Debian 13 / Trixie)
 RUN apt-get update && apt-get install -y --no-install-recommends \
