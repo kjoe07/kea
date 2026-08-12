@@ -66,7 +66,7 @@ docker run -d \
   -v '/mnt/user/appdata/kea-primary/webmin':'/etc/webmin':'rw' \
   --cap-add=NET_ADMIN \
   --cap-add=NET_RAW \
-  ghcr.io/kjoe07/kea-alloy-stork-webmin:latest
+  ghcr.io/kjoe07/kea:latest
 ```
 
 ### 🔒 Webmin Initial Password Setup
