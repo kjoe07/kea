@@ -1,28 +1,140 @@
 <?xml version="1.0"?>
 <Container version="2">
-  <Name>kea-primary</Name>
-  <Repository>ghcr.io/kjoe07/kea:latest</Repository>
-  <Registry>https://ghcr.io/kjoe07/kea</Registry>
-  <Network>br0</Network>
-  <MyIP>192.168.0.247</MyIP>
-  <Shell>bash</Shell>
-  <Privileged>false</Privileged>
-  <Overview>ISC Kea DHCP, Stork Agent, Grafana Alloy, and Webmin.</Overview>
-  <Category>Network:DNS</Category>
-  <WebUI>https://[IP]:[PORT:10000]</WebUI>
-  <Icon>https://www.isc.org/images/isclogos/kea-logo-cmyk-circle.png</Icon>
+    <Name>kea-primary</Name>
+    <Repository>ghcr.io/kjoe07/kea:latest</Repository>
+    <Registry>https://ghcr.io/kjoe07/kea</Registry>
 
-  <!-- Default Paths -->
-  <Config Name="Kea Config" Target="/etc/kea" Default="/mnt/user/appdata/kea-primary" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/kea-primary</Config>
-  <Config Name="Kea Logs" Target="/var/log/kea" Default="/mnt/user/appdata/kea-primary/logs" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/kea-primary/logs</Config>
-  <Config Name="Kea Lib" Target="/var/lib/kea" Default="/mnt/user/appdata/kea-primary/lib" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/kea-primary/lib</Config>
-  <Config Name="Alloy Config" Target="/etc/alloy" Default="/mnt/user/appdata/kea-primary/alloy" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/kea-primary/alloy</Config>
-  <Config Name="Webmin Config" Target="/etc/webmin" Default="/mnt/user/appdata/kea-primary/webmin" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/kea-primary/webmin</Config>
+    <Network>br0</Network>
 
-  <!-- Default Environment Variables -->
-  <Config Name="Stork Agent Host" Target="STORK_AGENT_HOST" Default="192.168.0.247" Type="Variable" Display="always" Required="true">192.168.0.239</Config>
-  <Config Name="Stork Agent Port" Target="STORK_AGENT_PORT" Default="8081" Type="Variable" Display="always" Required="true">8081</Config>
-  <Config Name="Stork Server URL" Target="STORK_AGENT_SERVER_URL" Default="http://192.168.0.240:8080" Type="Variable" Display="always" Required="true">http://192.168.0.240:8080</Config>
-  <Config Name="Prometheus Exporter Addr" Target="PROMETHEUS_EXPORTER_ADDR" Default="0.0.0.0" Type="Variable" Display="always" Required="true">0.0.0.0</Config>
-  <Config Name="Webmin Referers" Target="WEBMIN_REFERERS" Default="*" Type="Variable" Display="always" Required="true">*</Config>
+    <Shell>bash</Shell>
+    <Privileged>false</Privileged>
+
+    <Overview>ISC Kea DHCP, Stork Agent, Grafana Alloy, and Webmin.</Overview>
+    <Category>Network:DNS</Category>
+
+    <WebUI>http://[IP]:[PORT:10000]</WebUI>
+
+    <Icon>https://www.isc.org/images/isclogos/kea-logo-cmyk-circle.png</Icon>
+
+    <!-- Webmin -->
+    <Config
+        Name="Webmin"
+        Target="10000"
+        Default="10000"
+        Mode="tcp"
+        Type="Port"
+        Display="always"
+        Required="true">
+        10000
+    </Config>
+
+    <!-- Kea Config -->
+    <Config
+        Name="Kea Config"
+        Target="/etc/kea"
+        Default="/mnt/user/appdata/kea-primary"
+        Mode="rw"
+        Type="Path"
+        Display="always"
+        Required="true">
+        /mnt/user/appdata/kea-primary
+    </Config>
+
+    <!-- Kea Logs -->
+    <Config
+        Name="Kea Logs"
+        Target="/var/log/kea"
+        Default="/mnt/user/appdata/kea-primary/logs"
+        Mode="rw"
+        Type="Path"
+        Display="always"
+        Required="true">
+        /mnt/user/appdata/kea-primary/logs
+    </Config>
+
+    <!-- Kea Lib -->
+    <Config
+        Name="Kea Lib"
+        Target="/var/lib/kea"
+        Default="/mnt/user/appdata/kea-primary/lib"
+        Mode="rw"
+        Type="Path"
+        Display="always"
+        Required="true">
+        /mnt/user/appdata/kea-primary/lib
+    </Config>
+
+    <!-- Alloy -->
+    <Config
+        Name="Alloy Config"
+        Target="/etc/alloy"
+        Default="/mnt/user/appdata/kea-primary/alloy"
+        Mode="rw"
+        Type="Path"
+        Display="always"
+        Required="true">
+        /mnt/user/appdata/kea-primary/alloy
+    </Config>
+
+    <!-- Webmin -->
+    <Config
+        Name="Webmin Config"
+        Target="/etc/webmin"
+        Default="/mnt/user/appdata/kea-primary/webmin"
+        Mode="rw"
+        Type="Path"
+        Display="always"
+        Required="true">
+        /mnt/user/appdata/kea-primary/webmin
+    </Config>
+
+    <Config
+      Name="Stork Agent Host"
+      Target="STORK_AGENT_HOST"
+      Default="192.168.0.247"
+      Type="Variable"
+      Display="always"
+      Required="true">
+      192.168.0.247
+    </Config>
+
+    <Config
+        Name="Stork Agent Port"
+        Target="STORK_AGENT_PORT"
+        Default="8081"
+        Type="Variable"
+        Display="always"
+        Required="true">
+        8081
+    </Config>
+
+    <Config
+        Name="Stork Server URL"
+        Target="STORK_AGENT_SERVER_URL"
+        Default="http://192.168.0.240:8080"
+        Type="Variable"
+        Display="always"
+        Required="true">
+        http://192.168.0.240:8080
+    </Config>
+
+    <Config
+        Name="Prometheus Exporter Addr"
+        Target="PROMETHEUS_EXPORTER_ADDR"
+        Default="0.0.0.0"
+        Type="Variable"
+        Display="always"
+        Required="true">
+        0.0.0.0
+    </Config>
+
+    <Config
+        Name="Webmin Referers"
+        Target="WEBMIN_REFERERS"
+        Default="*"
+        Type="Variable"
+        Display="always"
+        Required="true">
+        *
+    </Config>
 </Container>
