@@ -1,15 +1,19 @@
 #!/bin/bash
 set -e
 
-# Default to allowing all referers (*) if the user didn't specify WEBMIN_REFERERS in Unraid
+# Default environment variables (can be overridden in Unraid Docker template)
 WEBMIN_REFERERS="${WEBMIN_REFERERS:-*}"
+STORK_AGENT_HOST="${STORK_AGENT_HOST:-0.0.0.0}"
+STORK_AGENT_PORT="${STORK_AGENT_PORT:-8081}"
+STORK_AGENT_SERVER_URL="${STORK_AGENT_SERVER_URL:-http://192.168.0.240:8080}"
+PROMETHEUS_EXPORTER_ADDR="${PROMETHEUS_EXPORTER_ADDR:-0.0.0.0}"
 
 # --- WEBMIN INITIALIZATION ---
 if [ ! -f /etc/webmin/miniserv.conf ]; then
     echo "[Entrypoint] Initializing Webmin configuration..."
     cp -r /etc/webmin.default/* /etc/webmin/
     
-    # Disable Webmin internal SSL (ssl=0) for HTTP reverse proxying via SWAG/Nginx
+    # Disable Webmin internal SSL for HTTP reverse proxying via SWAG/Nginx
     sed -i 's/ssl=1/ssl=0/g' /etc/webmin/miniserv.conf
     
     # Trust reverse proxy host headers
@@ -30,7 +34,6 @@ else
         echo "trust_unknown_referers=1" >> /etc/webmin/miniserv.conf
     fi
 
-    # Dynamically update referers in existing mounted /etc/webmin/config on start
     if grep -q "^referers=" /etc/webmin/config; then
         sed -i "s/^referers=.*/referers=${WEBMIN_REFERERS}/g" /etc/webmin/config
     else
@@ -38,29 +41,34 @@ else
     fi
 fi
 
-# Create required PID, lockfile, and logging directories if missing
-mkdir -p /run/kea /var/log/kea /var/lib/kea
+# --- CREATE RUNTIME & LOG DIRECTORIES ---
+# /run is a tmpfs mount inside memory and must be recreated on boot
+mkdir -p /run/kea /var/run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
 
-# --- START SERVICES ---
+# --- START BACKGROUND SERVICES (Matching supervisor behavior) ---
+
 echo "Starting Webmin..."
 service webmin start
 
 echo "Starting Grafana Alloy..."
-/usr/bin/alloy run /etc/alloy/config.alloy &
+/usr/bin/alloy run /etc/alloy/config.alloy >> /var/log/kea/alloy.log 2>&1 &
 
 echo "Starting Stork Agent..."
-/usr/bin/stork-agent &
+/usr/bin/stork-agent --host "${STORK_AGENT_HOST}" --port "${STORK_AGENT_PORT}" --server-url "${STORK_AGENT_SERVER_URL}" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
+
+echo "Starting Kea Collector (Prometheus Exporter)..."
+/usr/bin/stork-agent --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" >> /var/log/kea/collector.log 2>&1 &
 
 echo "Starting Kea Control Agent..."
-kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf &
+/usr/sbin/kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf >> /etc/kea/logs/kea-ctrl-agent.log 2> /etc/kea/logs/kea-ctrl-agent.err &
 
 # Check if DDNS configuration exists before starting kea-dhcp-ddns
 if [ -f /etc/kea/kea-dhcp-ddns.conf ]; then
     echo "Starting Kea DHCP-DDNS Server..."
-    kea-dhcp-ddns -c /etc/kea/kea-dhcp-ddns.conf &
-else
-    echo "[Notice] /etc/kea/kea-dhcp-ddns.conf not found. Skipping Kea DHCP-DDNS startup."
+    /usr/sbin/kea-dhcp-ddns -c /etc/kea/kea-dhcp-ddns.conf >> /var/log/kea/kea-ddns.log 2>&1 &
 fi
 
+# --- FOREGROUND PROCESS (Kea DHCPv4) ---
+# exec replaces bash with kea-dhcp4 so signals (SIGTERM/SIGINT) pass directly from Docker
 echo "Starting Kea DHCPv4 Server..."
-exec kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
+exec /usr/sbin/kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
