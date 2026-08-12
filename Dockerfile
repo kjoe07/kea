@@ -16,13 +16,20 @@ RUN apt-get update && apt-get download isc-stork-agent
 FROM debian:trixie-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
-# Define default allowed referers for Webmin (* allows all host headers by default)
-ENV WEBMIN_REFERERS="*"
 
-LABEL net.unraid.docker.webui="https://[IP]:[PORT:10000]" \
+# Default Environment Variables matching your supervisor flags
+ENV WEBMIN_REFERERS="*" \
+    STORK_AGENT_HOST="192.168.0.239" \
+    STORK_AGENT_PORT="8081" \
+    STORK_AGENT_SERVER_URL="http://192.168.0.240:8080" \
+    PROMETHEUS_EXPORTER_ADDR="0.0.0.0"
+
+# Unraid Docker UI Annotations
+LABEL net.unraid.docker.managed="dockerman" \
+      net.unraid.docker.webui="https://[IP]:[PORT:10000]" \
       net.unraid.docker.icon="https://www.isc.org/images/isclogos/kea-logo-cmyk-circle.png"
 
-# Install base utilities, ISC Kea DHCP (Natively 2.6+ on Debian 13 / Trixie)
+# Install Kea DHCP & core tooling
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
@@ -35,7 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     kea-admin \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Webmin (Direct official package download)
+# Install Webmin
 RUN apt-get update && apt-get install -y --no-install-recommends \
     perl \
     libnet-ssleay-perl \
@@ -48,7 +55,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -f /tmp/webmin.deb \
     && rm -rf /var/lib/apt/lists/*
 
-# Back up fresh default Webmin config before any volumes are mounted over /etc/webmin
 RUN cp -r /etc/webmin /etc/webmin.default
 
 # Install Grafana Alloy
@@ -58,20 +64,24 @@ RUN mkdir -p /etc/apt/keyrings/ && \
     apt-get update && apt-get install -y --no-install-recommends alloy && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy and install Stork Agent from Stage 1
+# Copy and install Stork Agent
 COPY --from=stork-downloader /*.deb /tmp/
 RUN dpkg -i /tmp/*.deb || apt-get install -f -y && rm -f /tmp/*.deb
+
+# Pre-create standard runtime/log directories
+RUN mkdir -p /run/kea /var/run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Declare standard volume paths
+# Declare volume mount points corresponding to your Unraid Appdata paths:
+# /etc/kea     -> /mnt/user/appdata/kea-primary
+# /var/log/kea -> /mnt/user/appdata/kea-primary/logs
+# /var/lib/kea -> /mnt/user/appdata/kea-primary/lib
+# /etc/alloy   -> /mnt/user/appdata/kea-primary/alloy
+# /etc/webmin  -> /mnt/user/appdata/kea-primary/webmin
 VOLUME ["/etc/kea", "/var/log/kea", "/var/lib/kea", "/etc/alloy", "/etc/webmin"]
 
-# Exposed Ports:
-# 67/udp (DHCPv4), 68/udp (DHCPv4 Client), 546/udp & 547/udp (DHCPv6)
-# 8000/tcp (Kea Control Agent / Stork Hook), 8080/tcp (Stork Agent)
-# 10000/tcp (Webmin), 12345/tcp (Grafana Alloy)
-EXPOSE 67/udp 68/udp 546/udp 547/udp 8000/tcp 8080/tcp 10000/tcp 12345/tcp
+EXPOSE 67/udp 68/udp 546/udp 547/udp 8000/tcp 8081/tcp 10000/tcp 12345/tcp 9547/tcp
 
 ENTRYPOINT ["/entrypoint.sh"]
