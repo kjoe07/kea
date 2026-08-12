@@ -19,6 +19,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Define default allowed referers for Webmin (* allows all host headers by default)
 ENV WEBMIN_REFERERS="*"
 
+LABEL net.unraid.docker.webui="https://[IP]:[PORT:10000]" \
+      net.unraid.docker.icon="https://www.isc.org/images/isclogos/kea-logo-cmyk-circle.png"
+
 # Install base utilities, ISC Kea DHCP (Natively 2.6+ on Debian 13 / Trixie)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
