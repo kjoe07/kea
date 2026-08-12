@@ -6,7 +6,7 @@ A lightweight, multi-service Docker container running **ISC Kea DHCP**, **ISC St
 
 ---
 
-## 🗂️ Required Host Directories (Mounts)
+### 🗂️ Required Host Directories (Mounts)
 
 Create the necessary persistent directories on your host before launching:
 
@@ -14,7 +14,8 @@ Create the necessary persistent directories on your host before launching:
 mkdir -p /mnt/user/appdata/kea-primary/alloy
 mkdir -p /mnt/user/appdata/kea-primary/logs
 mkdir -p /mnt/user/appdata/kea-primary/lib
-mkdir -p /mnt/user/appdata/kea-primary/webmin```
+mkdir -p /mnt/user/appdata/kea-primary/webmin
+```
 
 Volume Mount Breakdown
 | Host Path	| Container Path | Mode | Description |
@@ -25,7 +26,7 @@ Volume Mount Breakdown
 | /mnt/user/appdata/kea-primary/alloy	| /etc/alloy	| rw | Grafana Alloy configuration directory (config.alloy).|
 | /mnt/user/appdata/kea-primary/webmin	| /etc/webmin	| rw | Persistent Webmin users, credentials, and settings.|
 
- 🔌 Exposed Network Ports
+### 🔌 Exposed Network Ports
 | Port	| Protocol	| Service | Purpose |
 | --- | --- | --- | --- |
 | 67 / 68 | UDP	| Kea DHCPv4 | DHCP Lease Requests & Discovery |
@@ -43,7 +44,8 @@ Volume Mount Breakdown
 
 ### 🚀 Execution Commands
 Unraid / CLI Run Command
-`Bash
+```
+Bash
 docker run -d \
   --name='kea-primary' \
   --net='br0' \
@@ -64,9 +66,10 @@ docker run -d \
   -v '/mnt/user/appdata/kea-primary/webmin':'/etc/webmin':'rw' \
   --cap-add=NET_ADMIN \
   --cap-add=NET_RAW \
-  ghcr.io/kjoe07/kea-alloy-stork-webmin:latest`
+  ghcr.io/kjoe07/kea-alloy-stork-webmin:latest
+```
 
-🔒 Webmin Initial Password Setup
+### 🔒 Webmin Initial Password Setup
 To set the root account password for Webmin after first startup:
 
 `Bash
