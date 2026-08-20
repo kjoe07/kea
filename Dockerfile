@@ -50,6 +50,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -1sLf --retry 3 'https://dl.cloudsmith.io/public/isc/kea-3-2/setup.deb.sh' | bash -s -- debian bookworm \
     && apt-get update && apt-get install -y --no-install-recommends \
     isc-kea \
+    isc-kea-ctrl-agent \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Webmin
