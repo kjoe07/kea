@@ -76,7 +76,8 @@ echo "Starting Stork Agent..."
   --host "${STORK_AGENT_HOST}" \
   --port "${STORK_AGENT_PORT}" \
   --server-url "${STORK_AGENT_SERVER_URL}" \
-  --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
+  --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" \
+  --kea-control-agent-url "http://127.0.0.1:8000" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
 
 # --- KEEP CONTAINER ALIVE & OUTPUT LOGS ---
 echo "All services started successfully."
