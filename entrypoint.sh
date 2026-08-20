@@ -49,17 +49,13 @@ chmod 750 /run/kea /var/run/kea
 
 # --- START BACKGROUND SERVICES (Matching supervisor behavior) ---
 
+# --- START BACKGROUND SERVICES ---
+
 echo "Starting Webmin..."
 service webmin start
 
 echo "Starting Grafana Alloy..."
 /usr/bin/alloy run /etc/alloy/config.alloy >> /var/log/kea/alloy.log 2>&1 &
-
-echo "Starting Stork Agent..."
-/usr/bin/stork-agent --host "${STORK_AGENT_HOST}" --port "${STORK_AGENT_PORT}" --server-url "${STORK_AGENT_SERVER_URL}" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
-
-echo "Starting Kea Collector (Prometheus Exporter)..."
-/usr/bin/stork-agent --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" >> /var/log/kea/collector.log 2>&1 &
 
 echo "Starting Kea Control Agent..."
 /usr/sbin/kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf >> /etc/kea/logs/kea-ctrl-agent.log 2> /etc/kea/logs/kea-ctrl-agent.err &
@@ -70,7 +66,16 @@ if [ -f /etc/kea/kea-dhcp-ddns.conf ]; then
     /usr/sbin/kea-dhcp-ddns -c /etc/kea/kea-dhcp-ddns.conf >> /var/log/kea/kea-ddns.log 2>&1 &
 fi
 
+# Give Kea a moment to generate control sockets in /run/kea before Stork probes them
+sleep 2
+
+echo "Starting Single Stork Agent instance..."
+/usr/bin/stork-agent \
+  --host "${STORK_AGENT_HOST}" \
+  --port "${STORK_AGENT_PORT}" \
+  --server-url "${STORK_AGENT_SERVER_URL}" \
+  --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
+
 # --- FOREGROUND PROCESS (Kea DHCPv4) ---
-# exec replaces bash with kea-dhcp4 so signals (SIGTERM/SIGINT) pass directly from Docker
 echo "Starting Kea DHCPv4 Server..."
 exec /usr/sbin/kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
