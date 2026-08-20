@@ -1,5 +1,5 @@
 # Set build-time version argument
-ARG BUILD_VERSION=1.1
+ARG BUILD_VERSION=1.2
 
 # Stage 1: Download official Stork Agent Debian package from ISC Cloudsmith repo
 FROM debian:12-slim AS stork-downloader
@@ -40,7 +40,7 @@ LABEL org.opencontainers.image.version="${BUILD_VERSION}" \
       net.unraid.docker.volumes="/etc/kea:/mnt/user/appdata/kea-primary:rw, /var/log/kea:/mnt/user/appdata/kea-primary/logs:rw, /var/lib/kea:/mnt/user/appdata/kea-primary/lib:rw, /etc/alloy:/mnt/user/appdata/kea-primary/alloy:rw, /etc/webmin:/mnt/user/appdata/kea-primary/webmin:rw" \
       net.unraid.docker.variables="STORK_AGENT_HOST=192.168.0.239, STORK_AGENT_PORT=8081, STORK_AGENT_SERVER_URL=http://192.168.0.240:8080, PROMETHEUS_EXPORTER_ADDR=0.0.0.0, WEBMIN_REFERERS=*"
 
-# Setup ISC Kea 3.2 Repository and Install Binaries
+# Setup ISC Kea 3.2 Repository and Install ALL Server Binaries + Hooks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
@@ -53,6 +53,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     isc-kea-dhcp-ddns \
     isc-kea-ctrl-agent \
     isc-kea-admin \
+    isc-kea-hooks \
+    isc-kea-dhcp-cmds \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Webmin

@@ -46,9 +46,9 @@ fi
 
 # --- CREATE RUNTIME & LOG DIRECTORIES ---
 # /run is a tmpfs mount inside memory and must be recreated on boot
-mkdir -p /run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
+mkdir -p /var/run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
 # Fix Kea 2.6 socket permissions requirement
-chmod 750 /run/kea
+chmod 750 /var/run/kea
 
 # Create log files if they don't exist so tail doesn't fail
 touch /var/log/kea/kea-dhcp4.log /var/log/kea/stork-agent.log
@@ -80,8 +80,7 @@ echo "Starting Stork Agent..."
   --host "${STORK_AGENT_HOST}" \
   --port "${STORK_AGENT_PORT}" \
   --server-url "${STORK_AGENT_SERVER_URL}" \
-  --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" \
-  --kea-control-agent-url "http://127.0.0.1:8000" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
+  --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
 
 # --- KEEP CONTAINER ALIVE & OUTPUT LOGS ---
 echo "All services started successfully (v${BUILD_VERSION:-1.1})."
