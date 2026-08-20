@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Display version at startup
+echo "[Entrypoint] Starting Kea-Stork Container Version ${BUILD_VERSION:-1.1}"
+
 # Default environment variables (can be overridden in Unraid Docker template)
 WEBMIN_REFERERS="${WEBMIN_REFERERS:-*}"
 STORK_AGENT_HOST="${STORK_AGENT_HOST:-0.0.0.0}"
@@ -47,9 +50,10 @@ mkdir -p /run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/h
 # Fix Kea 2.6 socket permissions requirement
 chmod 750 /run/kea
 
-# --- START BACKGROUND SERVICES (Matching supervisor behavior) ---
+# Create log files if they don't exist so tail doesn't fail
+touch /var/log/kea/kea-dhcp4.log /var/log/kea/stork-agent.log
 
-# --- START SERVICES IN ORDER ---
+# --- START BACKGROUND SERVICES ---
 
 echo "Starting Webmin..."
 service webmin start
@@ -80,5 +84,5 @@ echo "Starting Stork Agent..."
   --kea-control-agent-url "http://127.0.0.1:8000" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
 
 # --- KEEP CONTAINER ALIVE & OUTPUT LOGS ---
-echo "All services started successfully."
+echo "All services started successfully (v${BUILD_VERSION:-1.1})."
 exec tail -f /var/log/kea/kea-dhcp4.log /var/log/kea/stork-agent.log

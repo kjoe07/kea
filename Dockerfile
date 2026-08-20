@@ -1,5 +1,8 @@
+# Set build-time version argument
+ARG BUILD_VERSION=1.1
+
 # Stage 1: Download official Stork Agent Debian package from ISC Cloudsmith repo
-FROM debian:trixie-slim AS stork-downloader
+FROM debian:12-slim AS stork-downloader
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -7,15 +10,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     gnupg \
+    lsb-release \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/setup.deb.sh' | bash
+# Add ISC official Stork repository (forcing bookworm target for fast, reliable CI fetch)
+RUN curl -1sLf --retry 3 'https://dl.cloudsmith.io/public/isc/stork/setup.deb.sh' | bash -s -- debian bookworm
 RUN apt-get update && apt-get download isc-stork-agent
 
 # Stage 2: Final runtime container
-FROM debian:trixie-slim
+FROM debian:12-slim
 
+ARG BUILD_VERSION=1.1
 ENV DEBIAN_FRONTEND=noninteractive
+ENV BUILD_VERSION=${BUILD_VERSION}
 
 # Default Environment Variables
 ENV WEBMIN_REFERERS="*" \
@@ -24,25 +31,28 @@ ENV WEBMIN_REFERERS="*" \
     STORK_AGENT_SERVER_URL="http://192.168.0.240:8080" \
     PROMETHEUS_EXPORTER_ADDR="0.0.0.0"
 
-# Unraid GUI Auto-Fill & Metadata Annotations
-LABEL net.unraid.docker.managed="dockerman" \
+# Unraid GUI Auto-Fill & Metadata Annotations (Version 1.1)
+LABEL org.opencontainers.image.version="${BUILD_VERSION}" \
+      net.unraid.docker.managed="dockerman" \
       net.unraid.docker.webui="https://[IP]:[PORT:10000]" \
       net.unraid.docker.icon="https://www.isc.org/images/isclogos/kea-logo-cmyk-circle.png" \
       net.unraid.docker.ports="67:67/udp, 68:68/udp, 546:546/udp, 547:547/udp, 8000:8000/tcp, 8081:8081/tcp, 10000:10000/tcp, 12345:12345/tcp, 9547:9547/tcp" \
       net.unraid.docker.volumes="/etc/kea:/mnt/user/appdata/kea-primary:rw, /var/log/kea:/mnt/user/appdata/kea-primary/logs:rw, /var/lib/kea:/mnt/user/appdata/kea-primary/lib:rw, /etc/alloy:/mnt/user/appdata/kea-primary/alloy:rw, /etc/webmin:/mnt/user/appdata/kea-primary/webmin:rw" \
       net.unraid.docker.variables="STORK_AGENT_HOST=192.168.0.239, STORK_AGENT_PORT=8081, STORK_AGENT_SERVER_URL=http://192.168.0.240:8080, PROMETHEUS_EXPORTER_ADDR=0.0.0.0, WEBMIN_REFERERS=*"
 
-# Install Kea DHCP & core tooling
+# Setup ISC Kea 3.2 Repository and Install Binaries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
     lsb-release \
     ca-certificates \
     procps \
-    kea-dhcp4-server \
-    kea-dhcp-ddns-server \
-    kea-ctrl-agent \
-    kea-admin \
+    && curl -1sLf --retry 3 'https://dl.cloudsmith.io/public/isc/kea-3-2/setup.deb.sh' | bash -s -- debian bookworm \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    isc-kea-dhcp4 \
+    isc-kea-dhcp-ddns \
+    isc-kea-ctrl-agent \
+    isc-kea-admin \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Webmin
@@ -67,7 +77,7 @@ RUN mkdir -p /etc/apt/keyrings/ && \
     apt-get update && apt-get install -y --no-install-recommends alloy && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy and install Stork Agent
+# Copy and install Stork Agent from downloader stage
 COPY --from=stork-downloader /*.deb /tmp/
 RUN dpkg -i /tmp/*.deb || apt-get install -f -y && rm -f /tmp/*.deb
 
