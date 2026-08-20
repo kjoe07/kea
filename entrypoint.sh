@@ -43,13 +43,13 @@ fi
 
 # --- CREATE RUNTIME & LOG DIRECTORIES ---
 # /run is a tmpfs mount inside memory and must be recreated on boot
-mkdir -p /run/kea /var/run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
+mkdir -p /run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
 # Fix Kea 2.6 socket permissions requirement
-chmod 750 /run/kea /var/run/kea
+chmod 750 /run/kea
 
 # --- START BACKGROUND SERVICES (Matching supervisor behavior) ---
 
-# --- START BACKGROUND SERVICES ---
+# --- START SERVICES IN ORDER ---
 
 echo "Starting Webmin..."
 service webmin start
@@ -60,22 +60,24 @@ echo "Starting Grafana Alloy..."
 echo "Starting Kea Control Agent..."
 /usr/sbin/kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf >> /etc/kea/logs/kea-ctrl-agent.log 2> /etc/kea/logs/kea-ctrl-agent.err &
 
-# Check if DDNS configuration exists before starting kea-dhcp-ddns
 if [ -f /etc/kea/kea-dhcp-ddns.conf ]; then
     echo "Starting Kea DHCP-DDNS Server..."
     /usr/sbin/kea-dhcp-ddns -c /etc/kea/kea-dhcp-ddns.conf >> /var/log/kea/kea-ddns.log 2>&1 &
 fi
 
-# Give Kea a moment to generate control sockets in /run/kea before Stork probes them
-sleep 2
+echo "Starting Kea DHCPv4 Server..."
+/usr/sbin/kea-dhcp4 -c /etc/kea/kea-dhcp4.conf >> /var/log/kea/kea-dhcp4.log 2>&1 &
 
-echo "Starting Single Stork Agent instance..."
+# Pause 3 seconds so kea-dhcp4 and kea-ctrl-agent create their sockets in /run/kea
+sleep 3
+
+echo "Starting Stork Agent..."
 /usr/bin/stork-agent \
   --host "${STORK_AGENT_HOST}" \
   --port "${STORK_AGENT_PORT}" \
   --server-url "${STORK_AGENT_SERVER_URL}" \
   --prometheus-kea-exporter-address="${PROMETHEUS_EXPORTER_ADDR}" >> /var/log/kea/stork-agent.log 2> /var/log/kea/stork-agent.err &
 
-# --- FOREGROUND PROCESS (Kea DHCPv4) ---
-echo "Starting Kea DHCPv4 Server..."
-exec /usr/sbin/kea-dhcp4 -c /etc/kea/kea-dhcp4.conf
+# --- KEEP CONTAINER ALIVE & OUTPUT LOGS ---
+echo "All services started successfully."
+exec tail -f /var/log/kea/kea-dhcp4.log /var/log/kea/stork-agent.log
