@@ -61,9 +61,6 @@ service webmin start
 echo "Starting Grafana Alloy..."
 /usr/bin/alloy run /etc/alloy/config.alloy >> /var/log/kea/alloy.log 2>&1 &
 
-echo "Starting Kea Control Agent..."
-/usr/sbin/kea-ctrl-agent -c /etc/kea/kea-ctrl-agent.conf >> /etc/kea/logs/kea-ctrl-agent.log 2> /etc/kea/logs/kea-ctrl-agent.err &
-
 if [ -f /etc/kea/kea-dhcp-ddns.conf ]; then
     echo "Starting Kea DHCP-DDNS Server..."
     /usr/sbin/kea-dhcp-ddns -c /etc/kea/kea-dhcp-ddns.conf >> /var/log/kea/kea-ddns.log 2>&1 &
