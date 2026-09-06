@@ -47,8 +47,12 @@ fi
 # --- CREATE RUNTIME & LOG DIRECTORIES ---
 # /run is a tmpfs mount inside memory and must be recreated on boot
 mkdir -p /var/run/kea /var/log/kea /var/lib/kea /etc/kea/logs /usr/lib/stork-agent/hooks
-# Fix Kea 2.6 socket permissions requirement
-chmod 750 /var/run/kea
+
+# Clean up stale UNIX sockets, locks, and PID files left from previous container runs
+rm -f /var/run/kea/*ctrl-socket* /var/run/kea/*.pid /var/run/kea/*.lock
+
+# Set directory permissions so both Kea and Stork Agent can access sockets
+chmod 777 /var/run/kea
 
 # Create log files if they don't exist so tail doesn't fail
 touch /var/log/kea/kea-dhcp4.log /var/log/kea/stork-agent.log
